@@ -27,8 +27,12 @@ extern int ftpport;
 /*-----------------------------------------------------------------------------
  *  函数声明
  *-----------------------------------------------------------------------------*/
- int getftpport(void);
-
+int getftpport(void);
+void setpeer(char *domain);
+void lostpeer(void);
+void login(char *domain);
+char *hookup (char *domain);
+int getreply(void);
 
 
 

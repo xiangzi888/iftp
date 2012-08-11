@@ -1,6 +1,6 @@
 ALL= iftp
 CC=  gcc
-CFLAGS= -g -Wall
+CFLAGS= -g -Wall -DDEBUG
 
 all: $(ALL)
 

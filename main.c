@@ -43,6 +43,7 @@
 main ( int argc, char *argv[] )
 {
 	ftpport = getftpport();
+	setpeer(argv[1]);
 
 	return EXIT_SUCCESS;
 }				/* ----------  end of function main  ---------- */
