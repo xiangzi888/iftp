@@ -28,9 +28,24 @@
 #include <netdb.h>
 
 
-#include "ftpvar.h"
+#include "ftp.h"
 
 
+#include	<stdlib.h>
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  main
+ *  Description:  
+ * =====================================================================================
+ */
+	int
+main ( int argc, char *argv[] )
+{
+	ftpport = getftpport();
+
+	return EXIT_SUCCESS;
+}				/* ----------  end of function main  ---------- */
 
 
 
