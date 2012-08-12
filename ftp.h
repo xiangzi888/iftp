@@ -30,9 +30,10 @@ extern int ftpport;
 int getftpport(void);
 void setpeer(char *domain);
 void lostpeer(void);
-void login(char *domain);
+void login(char *domain, int anon);
 char *hookup (char *domain);
 int getreply(void);
+int command (const char *fmt, ...);
 
 
 

@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 
 #include "ftp.h"
@@ -39,6 +40,7 @@
  *-----------------------------------------------------------------------------*/
 #define MAXNAME 20
 #define MAXHOST 200
+#define MAXBUF  100
 
 
 /*-----------------------------------------------------------------------------
@@ -48,7 +50,7 @@ FILE *cin, *cout;
 
 int ftpport;
 int connected = 0;
-int logined;
+int logined = 0;
 int code;
 
 /* 数据传输格式控制 */
@@ -68,6 +70,9 @@ char bytename[MAXNAME];
 /* 服务器主机名 */
 char hostname[MAXHOST];
 
+/* 请求，响应标志 */
+char req[] = "\t===>>";
+char ans[] = "\t<<===";
 
 
 /* 
@@ -103,7 +108,7 @@ setpeer (char *domain)
 	char *host;
 
 	if (connected) {
-		printf("Already connected to %s, use close first.\n", hostname);
+		printf("Already connected to %s, use close first.%s\n", hostname, req);
 		return;
 	}
 	host = hookup(domain);
@@ -119,7 +124,7 @@ setpeer (char *domain)
 		strcpy(structname, "file"), stru = STRU_F;
 		strcpy(bytename, "8"), bytesize = 8;	//???
 		if (!logined)
-			login(host);
+			login(host, 1);
 	}
 }		/* -----  end of function setpeer  ----- */
 
@@ -192,7 +197,7 @@ hookup (char *domain)
 	strncpy(hostname, hostp->h_name, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';
 	
-	printf("Connected to %s\n", hostname);
+	printf("Connected to %s%s\n", hostname, req);
 
 	/* read startup message from server */
 	if (getreply() > 2){
@@ -244,8 +249,8 @@ getreply (void)
 			if (n == 0)
 				n = c;
 		}
-		/* 遇到了换行符 */
-		putchar(c);
+		/* 遇到了换行符，打印一个消息的标志 */
+		printf("%s%c", ans, c);
 		fflush(stdout);
 
 		if (more)
@@ -257,12 +262,43 @@ getreply (void)
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  login
- *  Description:  
+ *  Description:  登录到指定域，是否匿名
  * =====================================================================================
  */
 	void
-login (char *domain)
+login (char *domain, int anon)
 {
+	char *user = "anonymous";
+	char *pass = "guest";
+	char *acct;
+	char buf[MAXBUF];
+	int n;
+
+	if (!anon){
+		printf("Name(%s): ", domain);
+		if (fgets(buf, MAXBUF, stdin) == NULL){
+			fprintf(stderr, "\nLogin failed.\n");
+			return;
+		}
+		/* 将换行符变为结束符 */
+		buf[strlen(buf) - 1] = '\0';
+		if (*buf != '\0')
+			user = buf;
+	}
+	n = command("USER %s", user);
+	if (n == CONTINUE){
+		if (!anon)
+			pass = getpass("Password: ");
+		n = command("PASS %s", pass);
+	}
+	if (n == CONTINUE){
+		acct = getpass("Account: ");
+		n = command("ACCT %s", acct);
+	}
+	if (n != COMPLETE){
+		fprintf(stderr, "Login failed.\n");
+		return;
+	}
 	return;
 }		/* -----  end of function login  ----- */
 
@@ -277,3 +313,29 @@ lostpeer (void)
 {
 	return ;
 }		/* -----  end of function lostpeer  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  command
+ *  Description:  执行命令，格式由参数给出
+ * =====================================================================================
+ */
+	int
+command (const char *fmt, ...)
+{
+	va_list ap;
+
+	if (cout == NULL){
+		perror("No control connection for command");
+		code = -1;
+		return 0;
+	}
+	va_start(ap, fmt);
+	vfprintf(cout, fmt, ap);
+	va_end(ap);
+	fprintf(cout, "\r\n");
+	fflush(cout);
+	return getreply();
+}		/* -----  end of function command  ----- */
+
