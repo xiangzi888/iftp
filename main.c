@@ -158,7 +158,7 @@ makearg(char *str)
 			margc++;
 			p = strtok(NULL, " ");
 	}
-#ifdef DEBUG
+#ifdef DEBUG1
 	i = 0;
 	while (*margv[i]){
 		printf("%d:%s\t", i, margv[i]);

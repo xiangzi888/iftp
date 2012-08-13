@@ -22,6 +22,7 @@
  *-----------------------------------------------------------------------------*/
 extern FILE *cin, *cout;
 extern int ftpport;
+extern int data;
 extern int connected;
 extern char req[];
 extern char ans[];

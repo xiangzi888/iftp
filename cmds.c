@@ -15,9 +15,11 @@
  *
  * =====================================================================================
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "ftp.h"
 #include "cmds.h"
 
 
@@ -28,7 +30,10 @@ int margc;
 char margv[MAXARGNUM][MAXARGLEN];
 
 struct cmd cmdtab[] = {
-	{ "quit",		"quithelp",	0,	NULL,	quit},
+	{ "quit",	"quitH",	0,	NULL,	quit},
+	{ "ls",		"lsH",		0,	ls,		NULL},
+	{ "pwd",	"pwdH",		1,	NULL,	pwd },
+	{ "close",	"closeH",	1,	NULL,	disconnect},
 };
 
 /* 
@@ -71,3 +76,84 @@ quit (void)
 {
 	exit(0);
 }		/* -----  end of function quit  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  ls
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+ls (int argc, char *argv[])
+{
+	/*
+	static char foo[2] = "-";
+	const char *cmd;
+
+	if (argc < 2) {
+		argc++, argv[1] = NULL;
+	}
+	if (argc < 3) {
+		argc++, argv[2] = foo;
+	}
+	if (argc > 3) {
+		printf("Usage: %s [remote-dir] [local-file]\n", argv[0]);
+		code = -1;
+		return;
+	}
+	cmd = argv[0][0] == 'n' ? "NLST" : "LIST";
+	if (strcmp(argv[2], "-") && (argv[2] = globulize(argv[2]))==NULL) {
+		code = -1;
+		return;
+	}
+	if (strcmp(argv[2], "-") && *argv[2] != '|')
+		if ((argv[2] = globulize(argv[2]))==NULL || 
+		    !confirm("output to local-file:", argv[2])) {
+			code = -1;
+			return;
+	}
+	recvrequest(cmd, argv[2], argv[1], "w", 0);*/
+}		/* -----  end of function ls  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  pwd
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+pwd (void)
+{
+	if (margc > 1)
+		printf("Usage: %s\n", margv[0]);
+	command("PWD");
+}		/* -----  end of function pwd  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  disconnect
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+disconnect (void)
+{	
+	if (margc > 1)
+		printf("Usage: %s\n", margv[0]);
+	command("QUIT");
+	if (cout) {
+		(void) fclose(cout);
+	}
+	cout = NULL;
+	connected = 0;
+	data = -1;
+}		/* -----  end of function disconnect  ----- */
+
+
+
+
+
+

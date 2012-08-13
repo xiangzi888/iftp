@@ -5,8 +5,8 @@ CFLAGS= -g -Wall -DDEBUG
 all: $(ALL)
 
 main.o: ftp.h cmds.h
-ftp.o:  ftp.h cmds.h
-cmds.o: cmds.h
+ftp.o:  ftp.h
+cmds.o: cmds.h cmds.h
 
 
 iftp: main.o ftp.o cmds.o

@@ -52,6 +52,7 @@ int ftpport;
 int connected = 0;
 int logined = 0;
 int code;
+int data;		//???
 
 /* 数据传输格式控制 */
 int form;
