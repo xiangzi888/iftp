@@ -39,8 +39,8 @@
  *  宏定义
  *-----------------------------------------------------------------------------*/
 #define MAXNAME 20
-#define MAXHOST 200
-#define MAXBUF  100
+#define MAXHOST 100
+#define MAXLOGIN	80
 
 
 /*-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ char bytename[MAXNAME];
 char hostname[MAXHOST];
 
 /* 请求，响应标志 */
-char req[] = "\t===>>";
+char req[] = "===>>\t";
 char ans[] = "\t<<===";
 
 
@@ -88,7 +88,7 @@ getftpport (void)
 
 	servinfo = getservbyname("ftp", "tcp");
 	if (!servinfo) {
-		fprintf(stderr, "no ftp service!\n");
+		fprintf(stderr, "No ftp service!\n");
 		exit(1);
 	}
 
@@ -108,7 +108,7 @@ setpeer (char *domain)
 	char *host;
 
 	if (connected) {
-		printf("Already connected to %s, use close first.%s\n", hostname, req);
+		printf("Already connected to %s, use close first.\n", hostname);
 		return;
 	}
 	host = hookup(domain);
@@ -144,7 +144,7 @@ hookup (char *domain)
 	
 	/* get host's ip seraddr */
 	if (!(hostp = gethostbyname(domain))){
-		fprintf(stderr, "ftp: %s\n", domain);
+		fprintf(stderr, "Ftp: %s\n", domain);
 		goto BAD;
 	}
 
@@ -159,13 +159,13 @@ hookup (char *domain)
 
 	/* create a new socket for client */
 	if ((sockfd = socket(seraddr.sin_family, SOCK_STREAM, 0)) < 0){
-		perror("ftp: socket");
+		perror("Ftp: socket");
 		goto BAD;
 	}
 	
 	/* Now connect our socket to the server's socket */
     if (connect(sockfd, (struct sockaddr *)&seraddr, sizeof(seraddr)) < 0){
-		perror("ftp: connect");
+		perror("Ftp: connect");
 		goto BAD;
 	}
 	
@@ -176,7 +176,7 @@ hookup (char *domain)
 	
 	/* 获得客户的信息，ip，port */
 	if ((getsockname(sockfd, (struct sockaddr *)&cliaddr, &len)) < 0){
-		perror("ftp: getsockname");
+		perror("Ftp: getsockname");
 		goto BAD;
 	}
 	printf("%s\n", inet_ntoa(cliaddr.sin_addr));
@@ -186,7 +186,7 @@ hookup (char *domain)
 	cin = fdopen(sockfd, "r");
 	cout= fdopen(sockfd, "w");
 	if (cin == NULL || cout == NULL) {
-		fprintf(stderr, "ftp: fdopen failed.\n");
+		fprintf(stderr, "Ftp: fdopen failed.\n");
 		if (cin)
 			fclose(cin);
 		if (cout)
@@ -197,7 +197,7 @@ hookup (char *domain)
 	strncpy(hostname, hostp->h_name, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';
 	
-	printf("Connected to %s%s\n", hostname, req);
+	printf("Connected to %s\n", hostname);
 
 	/* read startup message from server */
 	if (getreply() > 2){
@@ -271,12 +271,12 @@ login (char *domain, int anon)
 	char *user = "anonymous";
 	char *pass = "guest";
 	char *acct;
-	char buf[MAXBUF];
+	char buf[MAXLOGIN];
 	int n;
 
 	if (!anon){
 		printf("Name(%s): ", domain);
-		if (fgets(buf, MAXBUF, stdin) == NULL){
+		if (fgets(buf, MAXLOGIN, stdin) == NULL){
 			fprintf(stderr, "\nLogin failed.\n");
 			return;
 		}
@@ -299,7 +299,6 @@ login (char *domain, int anon)
 		fprintf(stderr, "Login failed.\n");
 		return;
 	}
-	return;
 }		/* -----  end of function login  ----- */
 
 /* 
@@ -333,6 +332,17 @@ command (const char *fmt, ...)
 	}
 	va_start(ap, fmt);
 	vfprintf(cout, fmt, ap);
+
+	/* 发送到客户端，显示 */
+	printf("%s", req);
+#ifdef DEBUG1
+	printf("***%s***", fmt);
+#endif
+	if (strncmp("PASS ", fmt, strlen("PASS ")) == 0)
+		printf("PASS ********");
+	else
+		vfprintf(stdout, fmt, ap);
+	printf("\n");
 	va_end(ap);
 	fprintf(cout, "\r\n");
 	fflush(cout);
