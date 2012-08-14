@@ -16,26 +16,26 @@
  * =====================================================================================
  */
 
-
+/* 最多可分割20各参数 */
 #define MAXARGNUM 20 
-#define MAXARGLEN 50
 
 
 /*-----------------------------------------------------------------------------
  *  命令函数声明
  *-----------------------------------------------------------------------------*/
 struct cmd *getcmd(char *name);
-void quit(void);
-void pwd(void);
-void disconnect(void);
-void ls(int argc, char *argv[]);
+void QUIT(void);
+void PWD(void);
+void CLOSE(void);
+void LS(int argc, char *argv[]);
+void OPEN(int argc, char *argv[]);
 
 
 /*-----------------------------------------------------------------------------
  *  变量参数
  *-----------------------------------------------------------------------------*/
 extern int margc;
-extern char margv[MAXARGNUM][MAXARGLEN];
+extern char *margv[MAXARGNUM];
 
 struct cmd {
 	const char *c_name;	/* name of command */
@@ -43,7 +43,7 @@ struct cmd {
 	char c_conn;		/* must be connected to use command */
 
     /* Exactly one of these should be non-NULL, function to call */
-	void (*c_handler_1)(int, char **); 
+	void (*c_handler_1)(int argc, char *argv[]); 
 	void (*c_handler_0)(void);
 };
 

@@ -97,38 +97,6 @@ getftpport (void)
 }		/* -----  end of function getftpport  ----- */
 
 
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  setpeer
- *  Description:  连接到服务器，若未登录则执行登录操作
- * =====================================================================================
- */
-	void
-setpeer (char *domain)
-{
-	char *host;
-
-	if (connected) {
-		printf("Already connected to %s, use close first.\n", hostname);
-		return;
-	}
-	host = hookup(domain);
-	if (host){
-		connected = 1;
-
-		/*-----------------------------------------------------------------------------
-		 *  Set up defaults for FTP.
-		 *-----------------------------------------------------------------------------*/
-		strcpy(typename, "ascii"), type = TYPE_A, curtype = TYPE_A;
-		strcpy(formname, "non-print"), form = FORM_N;
-		strcpy(modename, "stream"), mode = MODE_S;
-		strcpy(structname, "file"), stru = STRU_F;
-		strcpy(bytename, "8"), bytesize = 8;	//???
-		if (!logined)
-			login(host, 1);
-	}
-}		/* -----  end of function setpeer  ----- */
-
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -155,7 +123,7 @@ hookup (char *domain)
     seraddr.sin_port = ftpport;
 
 #ifdef DEBUG
-	printf("%s\n", inet_ntoa(seraddr.sin_addr));
+	printf("remote ip address: %s\n", inet_ntoa(seraddr.sin_addr));
 #endif
 
 	/* create a new socket for client */
@@ -180,12 +148,12 @@ hookup (char *domain)
 		perror("Ftp: getsockname");
 		goto BAD;
 	}
-	printf("%s\n", inet_ntoa(cliaddr.sin_addr));
-	printf("%d\n", ntohs(cliaddr.sin_port));
+	printf("local ip: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
 #endif
 
 	cin = fdopen(sockfd, "r");
 	cout= fdopen(sockfd, "w");
+
 	if (cin == NULL || cout == NULL) {
 		fprintf(stderr, "Ftp: fdopen failed.\n");
 		if (cin)
@@ -250,6 +218,7 @@ getreply (void)
 			if (n == 0)
 				n = c;
 		}
+
 		/* 遇到了换行符，打印一个消息的标志 */
 		printf("%s%c", ans, c);
 		fflush(stdout);

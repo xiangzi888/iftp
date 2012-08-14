@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/ftp.h>
 
 #include "ftp.h"
 #include "cmds.h"
@@ -27,13 +28,14 @@
  *  变量参数
  *-----------------------------------------------------------------------------*/
 int margc;
-char margv[MAXARGNUM][MAXARGLEN];
+char *margv[MAXARGNUM];
 
 struct cmd cmdtab[] = {
-	{ "quit",	"quitH",	0,	NULL,	quit},
-	{ "ls",		"lsH",		0,	ls,		NULL},
-	{ "pwd",	"pwdH",		1,	NULL,	pwd },
-	{ "close",	"closeH",	1,	NULL,	disconnect},
+	{ "quit",	"quitH",	0,	NULL,	QUIT},
+	{ "ls",		"lsH",		1,	LS,		NULL},
+	{ "pwd",	"pwdH",		1,	NULL,	PWD},
+	{ "close",	"closeH",	1,	NULL,	CLOSE},
+	{ "open",	"openH",	0,	OPEN,	NULL},
 };
 
 /* 
@@ -67,25 +69,27 @@ getcmd (char *name)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  quit
+ *         Name:  QUIT
  *  Description:  
  * =====================================================================================
  */
 	void
-quit (void)
-{
+QUIT (void)
+{	
+	if (connected)
+		CLOSE();
 	exit(0);
-}		/* -----  end of function quit  ----- */
+}		/* -----  end of function QUIT  ----- */
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  ls
+ *         Name:  LS
  *  Description:  
  * =====================================================================================
  */
 	void
-ls (int argc, char *argv[])
+LS (int argc, char *argv[])
 {
 	/*
 	static char foo[2] = "-";
@@ -114,35 +118,31 @@ ls (int argc, char *argv[])
 			return;
 	}
 	recvrequest(cmd, argv[2], argv[1], "w", 0);*/
-}		/* -----  end of function ls  ----- */
+}		/* -----  end of function LS----- */
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  pwd
+ *         Name:  PWD
  *  Description:  
  * =====================================================================================
  */
 	void
-pwd (void)
+PWD (void)
 {
-	if (margc > 1)
-		printf("Usage: %s\n", margv[0]);
 	command("PWD");
-}		/* -----  end of function pwd  ----- */
+}		/* -----  end of function PWD  ----- */
 
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  disconnect
+ *         Name:  CLOSE
  *  Description:  
  * =====================================================================================
  */
 	void
-disconnect (void)
+CLOSE (void)
 {	
-	if (margc > 1)
-		printf("Usage: %s\n", margv[0]);
 	command("QUIT");
 	if (cout) {
 		(void) fclose(cout);
@@ -150,7 +150,43 @@ disconnect (void)
 	cout = NULL;
 	connected = 0;
 	data = -1;
-}		/* -----  end of function disconnect  ----- */
+}		/* -----  end of function CLOSE  ----- */
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  OPEN
+ *  Description:  连接到服务器，若未登录则执行登录操作
+ * =====================================================================================
+ */
+	void
+OPEN (int argc, char *argv[])
+{
+	char *host;
+
+	if (argc != 2){
+		printf("Usage: %s hostname\n", argv[0]);
+		return;
+	}
+	if (connected) {
+		printf("Already connected to %s, use close first.\n", hostname);
+		return;
+	}
+	host = hookup(argv[1]);
+	if (host)
+		connected = 1;
+
+		/*-----------------------------------------------------------------------------
+		 *  Set up defaults for FTP.
+		 *-----------------------------------------------------------------------------*/
+		strcpy(typename, "ascii"), type = TYPE_A, curtype = TYPE_A;
+		strcpy(formname, "non-print"), form = FORM_N;
+		strcpy(modename, "stream"), mode = MODE_S;
+		strcpy(structname, "file"), stru = STRU_F;
+		strcpy(bytename, "8"), bytesize = 8;	//???
+
+		if (!logined)
+			login(host, 1);
+}		/* -----  end of function OPEN  ----- */
 
 
 

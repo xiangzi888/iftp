@@ -52,7 +52,11 @@ static void makearg(char *str);
 main( int argc, char *argv[] )
 {
 	ftpport = getftpport();
-	setpeer(argv[1]);
+	margc = 2;
+	margv[0] = "open";
+	margv[1] = argv[1];
+
+	OPEN(margc, margv);
 
 	while (1)
 	{
@@ -79,7 +83,7 @@ cmdloop (void)
 	for (;;) {
 		if (!getinput(line, sizeof(line))) {
 			/* control + c ??? */
-			quit();
+			QUIT();
 		}
 		l = strlen(line);
 		if (l == 0)
@@ -112,8 +116,8 @@ cmdloop (void)
 			continue;
 		}
 		if (c->c_handler_1) 
-			c->c_handler_1(margc, (char **)margv);
-		else 
+			c->c_handler_1(margc, margv);
+		else
 			c->c_handler_0();
 	}
 }		/* -----  end of function cmdloop  ----- */
@@ -146,34 +150,23 @@ makearg(char *str)
 {
 	char *p;
 	int i = -1;
-	const int num = sizeof(margv) / sizeof(margv[0]);
-
-	margc = 0;
 	memset(margv, 0, sizeof(margv));
 
 	p = strtok(str, " ");
-	while ((p != NULL) && (++i < num)){
-			strncpy(margv[i], p, sizeof(margv[i]));
-			margv[i][sizeof(margv[i]) - 1] = '\0';
-			margc++;
-			p = strtok(NULL, " ");
+	while (p != NULL){
+		if (++i < MAXARGNUM){
+			margv[i] = p;
+			margc = i + 1;
+		}
+		p = strtok(NULL, " ");
 	}
 #ifdef DEBUG1
 	i = 0;
-	while (*margv[i]){
+	while (margv[i] && i < MAXARGNUM){
 		printf("%d:%s\t", i, margv[i]);
 		i++;
 	}
 	printf("\n");
 #endif
 }		/* -----  end of function makearg  ----- */
-
-
-
-
-
-
-
-
-
 
