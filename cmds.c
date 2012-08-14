@@ -31,11 +31,11 @@ int margc;
 char *margv[MAXARGNUM];
 
 struct cmd cmdtab[] = {
-	{ "quit",	"quitH",	0,	NULL,	QUIT},
-	{ "ls",		"lsH",		1,	LS,		NULL},
-	{ "pwd",	"pwdH",		1,	NULL,	PWD},
-	{ "close",	"closeH",	1,	NULL,	CLOSE},
-	{ "open",	"openH",	0,	OPEN,	NULL},
+	{ "quit",	"HQUIT",	0,	NULL,	QUIT},
+	{ "ls",		"HLS",		1,	LS,		NULL},
+	{ "pwd",	"HPWD",		1,	NULL,	PWD},
+	{ "close",	"HCLOSE",	1,	NULL,	CLOSE},
+	{ "open",	"HOPEN",	0,	OPEN,	NULL},
 };
 
 /* 
