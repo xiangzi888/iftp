@@ -40,7 +40,6 @@
  *-----------------------------------------------------------------------------*/
 #define MAXNAME 20
 #define MAXHOST 100
-#define MAXLOGIN	80
 
 
 /*-----------------------------------------------------------------------------
@@ -48,32 +47,34 @@
  *-----------------------------------------------------------------------------*/
 FILE *cin, *cout;
 
+struct sockaddr_in cliaddr;
+struct sockaddr_in seraddr;
+struct sockaddr_in dataddr;
+
+int data = -1;
 int ftpport;
 int connected = 0;
 int logined = 0;
 int code;
-int data;		//???
 
 /* 数据传输格式控制 */
-int form;
 int type;
-int curtype;	//???
-int mode;
-int stru;
-int bytesize;
+int curtype;	
+int passivemode = 0;
+int autologin = 0;
+int sendport;
+int pflag;
 
-char formname[MAXNAME];
-char typename[MAXNAME];
-char modename[MAXNAME];
-char structname[MAXNAME];
-char bytename[MAXNAME];
+char typenm[MAXNAME];
 
 /* 服务器主机名 */
-char hostname[MAXHOST];
+char hostnm[MAXHOST];
+char pasv[64];
 
 /* 请求，响应标志 */
 char req[] = "===>>\t";
 char ans[] = "\t<<===";
+
 
 
 /* 
@@ -108,7 +109,6 @@ getftpport (void)
 hookup (char *domain)
 {
 	struct hostent *hostp;
-	struct sockaddr_in seraddr;
 	int sockfd = 0;
 	
 	/* get host's ip seraddr */
@@ -138,19 +138,18 @@ hookup (char *domain)
 		goto BAD;
 	}
 	
-	/* 连接成功 */
-#ifdef DEBUG
-	struct sockaddr_in cliaddr;
-	socklen_t len = sizeof(cliaddr);
 	
 	/* 获得客户的信息，ip，port */
+	socklen_t len = sizeof(cliaddr);
 	if ((getsockname(sockfd, (struct sockaddr *)&cliaddr, &len)) < 0){
 		perror("Ftp: getsockname");
 		goto BAD;
 	}
+#ifdef DEBUG
 	printf("local ip: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
 #endif
 
+	/* 连接成功 */
 	cin = fdopen(sockfd, "r");
 	cout= fdopen(sockfd, "w");
 
@@ -163,10 +162,10 @@ hookup (char *domain)
 		goto BAD;
 	}
 
-	strncpy(hostname, hostp->h_name, sizeof(hostname));
-	hostname[sizeof(hostname) - 1] = '\0';
+	strncpy(hostnm, hostp->h_name, sizeof(hostnm));
+	hostnm[sizeof(hostnm) - 1] = '\0';
 	
-	printf("Connected to %s\n", hostname);
+	printf("Connected to %s\n", hostnm);
 
 	/* read startup message from server */
 	if (getreply() > 2){
@@ -176,7 +175,7 @@ hookup (char *domain)
 			fclose(cout);
 		goto BAD;
 	}
-	return hostname;
+	return hostnm;
 BAD:
 	code = -1;
 	if (sockfd)
@@ -231,45 +230,27 @@ getreply (void)
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  login
- *  Description:  登录到指定域，是否匿名
+ *         Name:  atlogin
+ *  Description:  自动登录到指定域
  * =====================================================================================
  */
 	void
-login (char *domain, int anon)
+atlogin (void)
 {
 	char *user = "anonymous";
-	char *pass = "guest";
-	char *acct;
-	char buf[MAXLOGIN];
+	char *pass = getlogin() ? getlogin() : "guest";
 	int n;
 
-	if (!anon){
-		printf("Name(%s): ", domain);
-		if (fgets(buf, MAXLOGIN, stdin) == NULL){
-			fprintf(stderr, "\nLogin failed.\n");
-			return;
-		}
-		/* 将换行符变为结束符 */
-		buf[strlen(buf) - 1] = '\0';
-		if (*buf != '\0')
-			user = buf;
-	}
 	n = command("USER %s", user);
 	if (n == CONTINUE){
-		if (!anon)
-			pass = getpass("Password: ");
 		n = command("PASS %s", pass);
 	}
-	if (n == CONTINUE){
-		acct = getpass("Account: ");
-		n = command("ACCT %s", acct);
-	}
 	if (n != COMPLETE){
-		fprintf(stderr, "Login failed.\n");
+		fprintf(stderr, "Auto login failed.\n");
 		return;
 	}
-}		/* -----  end of function login  ----- */
+	logined = 1;
+}		/* -----  end of function atlogin  ----- */
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -319,3 +300,14 @@ command (const char *fmt, ...)
 	return getreply();
 }		/* -----  end of function command  ----- */
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  onoff
+ *  Description:  
+ * =====================================================================================
+ */
+	const char *
+onoff (int flag)
+{
+	return flag ? "on" : "off";
+}		/* -----  end of function onoff  ----- */

@@ -24,11 +24,21 @@
  *  命令函数声明
  *-----------------------------------------------------------------------------*/
 struct cmd *getcmd(char *name);
+void recvreq(const char *cmd, char *local, char *remote, const char *lmod);
+FILE *dataconn(const char *lmode);
+int initconn(void);
+
 void QUIT(void);
-void PWD(void);
 void CLOSE(void);
-void LS(int argc, char *argv[]);
+void PWD(void);
 void OPEN(int argc, char *argv[]);
+void USER(int argc, char *argv[]);
+void SYSTEM(void);
+void ASCII(void);
+void BINARY(void);
+void TYPE(int argc, char *argv[]);
+void LS(int argc, char *argv[]);
+void GET(int argc, char *argv[]);
 
 
 /*-----------------------------------------------------------------------------
@@ -46,5 +56,3 @@ struct cmd {
 	void (*c_handler_1)(int argc, char *argv[]); 
 	void (*c_handler_0)(void);
 };
-
-
