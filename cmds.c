@@ -66,6 +66,8 @@ struct cmd cmdtab[] = {
 	{ "ascii",	"HASCII",	1,	NULL,	ASCII},
 	{ "binary",	"HBINARY",	1,	NULL,	BINARY},
 	{ "image",	"HBINARY",	1,	NULL,	BINARY},
+	{ "passive","HPASSIVE",	0,	NULL,	PASSIVE},
+	{ "autolog","HAUTOLOG",	0,	NULL,	AUTOLOG},
 	{ "open",	"HOPEN",	0,	OPEN,	NULL},
 	{ "user",	"HUSER",	1,	USER,	NULL},
 	{ "type",	"HTYPE",	1,	TYPE,	NULL},
@@ -125,8 +127,8 @@ QUIT (void)
 	void
 LS (int argc, char *argv[])
 {
-	
 	const char *c;
+
 	if (argc > 3){
 		printf("Usage: %s [remote-dir] [local-file]\n", argv[0]);	
 		code = -1;
@@ -173,6 +175,7 @@ CLOSE (void)
 	}
 	cout = NULL;
 	connected = 0;
+	logined = 0;
 	data = -1;
 }		/* -----  end of function CLOSE  ----- */
 
@@ -196,13 +199,13 @@ OPEN (int argc, char *argv[])
 	if (hookup(argv[1]))
 		connected = 1;
 
-		/*-----------------------------------------------------------------------------
-		 *  Set up defaults for FTP.
-		 *-----------------------------------------------------------------------------*/
-		strcpy(typenm, "ascii"), type = TYPE_A, curtype = TYPE_A;
+	/*-----------------------------------------------------------------------------
+	 *  Set up defaults for FTP.
+	 *-----------------------------------------------------------------------------*/
+	strcpy(typenm, "ascii"), type = TYPE_A, curtype = TYPE_A;
 
-		if (autologin)
-			atlogin();
+	if (autologin)
+		atlogin();
 }		/* -----  end of function OPEN  ----- */
 
 
@@ -254,7 +257,7 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 	}
 	switch (curtype) {
 		case TYPE_I:
-		case TYPE_A:
+		case TYPE_A:	//???
 			while ((c = getc(din)) != EOF) {
 				putc(c, fout);
 				bytes++;
@@ -263,6 +266,8 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 		default:
 			break;
 	}
+	if (fout != stdout)
+		fclose(fout);
 	fclose(din);
 	data = -1;
 	getreply();
@@ -295,7 +300,7 @@ ABORT:
 initconn (void)
 {
 	char *p, *a;
-	int result, tmpno = 0, on = 1;
+	int result;
 	socklen_t len;
 	u_long a1,a2,a3,a4,p1,p2;
 
@@ -334,24 +339,16 @@ initconn (void)
 		}
 		return 0;
 	}
-NOPORT:
 	dataddr = cliaddr;
-	if (sendport)
-		dataddr.sin_port = 0;	/* let system pick one */ 
+	dataddr.sin_port = 0;	/* let system pick one */ 
+
 	if (data != -1)
 		close(data);
 	data = socket(AF_INET, SOCK_STREAM, 0);
 	if (data < 0) {
 		perror("Ftp: socket");
-		if (tmpno)
-			sendport = 1;
 		return 1;
 	}
-	if (!sendport)
-		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof (on)) < 0) {
-			perror("Ftp: setsockopt (reuse address)");
-			goto BAD;
-		}
 	if (bind(data, (struct sockaddr *)&dataddr, sizeof (dataddr)) < 0) {
 		perror("Ftp: bind");
 		goto BAD;
@@ -364,28 +361,15 @@ NOPORT:
 	}
 	if (listen(data, 1) < 0)
 		perror("Ftp: listen");
-	if (sendport) {
-		a = (char *)&dataddr.sin_addr;
-		p = (char *)&dataddr.sin_port;
+
+	a = (char *)&dataddr.sin_addr;
+	p = (char *)&dataddr.sin_port;
 #define	UC(b)	(((int)b) & 0xff)
-		result =
-		    command("PORT %d,%d,%d,%d,%d,%d",
-		      UC(a[0]), UC(a[1]), UC(a[2]), UC(a[3]),
+	result = command("PORT %d,%d,%d,%d,%d,%d", UC(a[0]), UC(a[1]), UC(a[2]), UC(a[3]),
 		      UC(p[0]), UC(p[1]));
-		if (result == ERROR && sendport == -1) {
-			sendport = 0;
-			tmpno = 1;
-			goto NOPORT;
-		}
-		return (result != COMPLETE);
-	}
-	if (tmpno)
-		sendport = 1;
-	return 0;
+	return (result != COMPLETE);
 BAD:
 	close(data), data = -1;
-	if (tmpno)
-		sendport = 1;
 	return 1;
 }		/* -----  end of function initconn  ----- */
 
@@ -402,20 +386,6 @@ PASV (void)
 	printf("Passive mode %s.\n", onoff(passivemode));
 	code = passivemode;
 }		/* -----  end of function PASV  ----- */
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  PORT
- *  Description:  
- * =====================================================================================
- */
-	void
-PORT (void)
-{
-	sendport = !sendport;
-	printf("Use of PORT cmds %s.\n", onoff(sendport));
-	code = sendport;
-}		/* -----  end of function PORT  ----- */
 
 
 /* 
@@ -589,11 +559,41 @@ USER (int argc, char *argv[])
 		fprintf(stdout, "Login failed.\n");
 		return;
 	}	
+	logined = 1;
 }		/* -----  end of function USER  ----- */
 
 
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  PASSIVE
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+PASSIVE (void)
+{
+	passivemode = !passivemode;
+	printf("Passive mode %s.\n", onoff(passivemode));
+	code = passivemode;
+}		/* -----  end of function PASSIVE  ----- */
 
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  AUTOLOG
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+AUTOLOG (void)
+{
+	autologin = !autologin;
+	printf("autologin %s.\n", onoff(autologin));
+	code = autologin;
+	
+	if (autologin && connected && !logined)
+		atlogin();
+}		/* -----  end of function AUTOLOG  ----- */
 
 

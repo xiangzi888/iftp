@@ -23,7 +23,6 @@
 extern FILE *cin, *cout;
 
 extern int ftpport;
-extern int sendport;
 extern int data;
 extern int connected;
 extern int logined;
@@ -37,9 +36,6 @@ extern int type;
 extern int curtype;
 extern int passivemode;
 extern int autologin;
-extern int mode;
-extern int stru;
-extern int bytesize;
 extern int pflag;	//???
 
 extern char typenm[];
@@ -47,7 +43,7 @@ extern char typenm[];
 
 /* 服务器主机名 */
 extern char hostnm[];
-extern char pasv[];
+extern char pasv[]; //???
 
 extern struct sockaddr_in cliaddr;
 extern struct sockaddr_in seraddr;
@@ -56,7 +52,7 @@ extern struct sockaddr_in dataddr;
 /*-----------------------------------------------------------------------------
  *  函数声明
  *-----------------------------------------------------------------------------*/
-int getftpport(void);
+const int getftpport(void);
 void lostpeer(void);
 void atlogin(void);
 char *hookup (char *domain);

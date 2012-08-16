@@ -82,7 +82,6 @@ cmdloop (void)
 
 	for (;;) {
 		if (!getinput(line, sizeof(line))) {
-			/* control + c ??? */
 			QUIT();
 		}
 		l = strlen(line);

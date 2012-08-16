@@ -36,6 +36,8 @@ void USER(int argc, char *argv[]);
 void SYSTEM(void);
 void ASCII(void);
 void BINARY(void);
+void PASSIVE(void);
+void AUTOLOG(void);
 void TYPE(int argc, char *argv[]);
 void LS(int argc, char *argv[]);
 void GET(int argc, char *argv[]);

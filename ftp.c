@@ -62,14 +62,13 @@ int type;
 int curtype;	
 int passivemode = 0;
 int autologin = 0;
-int sendport;
-int pflag;
+int pflag; //???
 
 char typenm[MAXNAME];
 
 /* 服务器主机名 */
 char hostnm[MAXHOST];
-char pasv[64];
+char pasv[64]; //???
 
 /* 请求，响应标志 */
 char req[] = "===>>\t";
@@ -83,7 +82,7 @@ char ans[] = "\t<<===";
  *  Description:  get standard ftp port 
  * =====================================================================================
  */
-	int	
+	const int	
 getftpport (void)
 {
 	struct servent *servinfo;
@@ -203,7 +202,7 @@ getreply (void)
 			if (c == EOF){
 				lostpeer();
 				code = 421;
-				printf("421 Service not available, remote server has closed connection\n");
+				printf("Service not available, remote server has closed connection\n");
 				fflush(stdout);
 				return 4;
 			}
@@ -261,7 +260,19 @@ atlogin (void)
 	void
 lostpeer (void)
 {
-	return ;
+	if (connected) {
+		if (cout != NULL) {
+			shutdown(fileno(cout), SHUT_RDWR);
+			fclose(cout);
+			cout = NULL;
+		}
+		if (data >= 0) {
+			shutdown(data, SHUT_RDWR);
+			close(data);
+			data = -1;
+		}
+		connected = 0;
+	}
 }		/* -----  end of function lostpeer  ----- */
 
 
@@ -285,15 +296,14 @@ command (const char *fmt, ...)
 	vfprintf(cout, fmt, ap);
 
 	/* 发送到客户端，显示 */
+#ifdef DEBUG
 	printf("%s", req);
-#ifdef DEBUG1
-	printf("***%s***", fmt);
-#endif
 	if (strncmp("PASS ", fmt, strlen("PASS ")) == 0)
 		printf("PASS ********");
 	else
 		vfprintf(stdout, fmt, ap);
 	printf("\n");
+#endif
 	va_end(ap);
 	fprintf(cout, "\r\n");
 	fflush(cout);
