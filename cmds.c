@@ -257,13 +257,25 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 	}
 	switch (curtype) {
 		case TYPE_I:
-		case TYPE_A:	//???
+			break;
+		case TYPE_A:	
 			while ((c = getc(din)) != EOF) {
+				while (c == '\r'){
+					bytes++;
+					if ((c = getc(din)) != '\n'){
+						putc('\r', fout);
+						if (c == '\0') {
+							bytes++;
+							goto CONTIN2;
+						}
+						if (c == EOF)
+							goto CONTIN2;	
+					}
+				}
 				putc(c, fout);
 				bytes++;
+CONTIN2:		;
 			}
-			break;
-		default:
 			break;
 	}
 	if (fout != stdout)
@@ -275,7 +287,6 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 
 ABORT:
 	/* abort using RFC959 recommended IP,SYNC sequence  */
-	//abortr(din); ???
 	code = -1;
 	if (din) {
 		fclose(din);

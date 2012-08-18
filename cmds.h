@@ -25,8 +25,8 @@
  *-----------------------------------------------------------------------------*/
 struct cmd *getcmd(char *name);
 void recvreq(const char *cmd, char *local, char *remote, const char *lmod);
-FILE *dataconn(const char *lmode);
 int initconn(void);
+FILE *dataconn(const char *lmode);
 
 void QUIT(void);
 void CLOSE(void);
