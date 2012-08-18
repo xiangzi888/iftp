@@ -233,8 +233,11 @@ GET (int argc, char *argv[])
 recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 {
 	FILE *fout, *din = 0;
+	static char *buf;
+	static unsigned int bufsize;
 	long bytes = 0;
-	int c;
+	struct stat st;
+	int c, d;
 
 	if (initconn()) {
 		code = -1;
@@ -251,12 +254,42 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 	else {
 		fout = fopen(local, lmode);
 		if (fout == NULL) {
-			fprintf(stderr, "Local: %s: %s\n", local, strerror(errno));
+			fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
 			goto ABORT;
 		}
 	}
+	
+	/* get best bufsize */
+	if (fstat(fileno(fout), &st) < 0 || st.st_blksize == 0)
+		st.st_blksize = BUFSIZ;
+	if (st.st_blksize > bufsize) {
+		if (buf)
+			free(buf);
+		buf = malloc((unsigned)st.st_blksize);
+		if (buf == NULL) {
+			perror("malloc");
+			bufsize = 0;
+			goto ABORT;
+		}
+		bufsize = st.st_blksize;
+	}
 	switch (type) {
 		case TYPE_I:
+			d = 0;
+			while ((c = read(fileno(din), buf, bufsize)) > 0){
+				if ((d = write(fileno(fout), buf, c)) != c)
+					break;
+				bytes += c;			
+			}
+			if (c < 0){
+				bytes = -1;
+			}
+			if (d < c){
+				if (d < 0)
+					fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
+				else
+					fprintf(stderr, "%s: short write\n", local);
+			}
 			break;
 		case TYPE_A:	
 			while ((c = getc(din)) != EOF) {
@@ -297,7 +330,7 @@ ABORT:
 		data = -1;
 	}
 	if (bytes > 0)
-		printf("received %ld bytes\n", bytes);
+		printf("Received %ld bytes\n", bytes);
 }		/* -----  end of function recvreq  ----- */
 
 
@@ -318,7 +351,7 @@ initconn (void)
 	if (passivemode) {
 		data = socket(AF_INET, SOCK_STREAM, 0);
 		if (data < 0) {
-			perror("Ftp: socket");
+			perror("ftp: socket");
 			return 1;
 		}
 		if (command("PASV") != COMPLETE) {
@@ -345,7 +378,7 @@ initconn (void)
 		dataddr.sin_port = htons((p1 << 8) | p2);
 
 		if (connect(data, (struct sockaddr *)&dataddr, sizeof(dataddr))<0) {
-			perror("Ftp: connect");
+			perror("ftp: connect");
 			return 1;
 		}
 		return 0;
@@ -357,21 +390,21 @@ initconn (void)
 		close(data);
 	data = socket(AF_INET, SOCK_STREAM, 0);
 	if (data < 0) {
-		perror("Ftp: socket");
+		perror("ftp: socket");
 		return 1;
 	}
 	if (bind(data, (struct sockaddr *)&dataddr, sizeof (dataddr)) < 0) {
-		perror("Ftp: bind");
+		perror("ftp: bind");
 		goto BAD;
 	}
 	/* 获得内核分配的临时端口 */
 	len = sizeof (dataddr);
 	if (getsockname(data, (struct sockaddr *)&dataddr, &len) < 0) {
-		perror("Ftp: getsockname");
+		perror("ftp: getsockname");
 		goto BAD;
 	}
 	if (listen(data, 1) < 0)
-		perror("Ftp: listen");
+		perror("ftp: listen");
 
 	a = (char *)&dataddr.sin_addr;
 	p = (char *)&dataddr.sin_port;
@@ -417,7 +450,7 @@ dataconn(const char *lmode)
 
 	s = accept(data, (struct sockaddr *) &from, &fromlen);
 	if (s < 0) {
-		perror("Ftp: accept");
+		perror("ftp: accept");
 		close(data), data = -1;
 		return (NULL);
 	}
@@ -541,7 +574,7 @@ USER (int argc, char *argv[])
 	if (argc == 1){
 		printf("Name(%s): ", hostnm);
 		if (fgets(buf, MAXLOGIN, stdin) == NULL){
-			fprintf(stderr, "\nLogin failed.\n");
+			fprintf(stderr, "\nlogin failed.\n");
 			return;
 		}
 		/* 将换行符变为结束符 */
@@ -567,7 +600,7 @@ USER (int argc, char *argv[])
 		n = command("ACCT %s", acct);
 	}
 	if (n != COMPLETE) {
-		fprintf(stdout, "Login failed.\n");
+		printf("Login failed.\n");
 		return;
 	}	
 	logined = 1;
@@ -600,7 +633,7 @@ PASSIVE (void)
 AUTOLOG (void)
 {
 	autologin = !autologin;
-	printf("autologin %s.\n", onoff(autologin));
+	printf("Autologin %s.\n", onoff(autologin));
 	code = autologin;
 	
 	if (autologin && connected && !logined)

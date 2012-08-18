@@ -89,7 +89,7 @@ getftpport (void)
 
 	servinfo = getservbyname("ftp", "tcp");
 	if (!servinfo) {
-		fprintf(stderr, "No ftp service!\n");
+		fprintf(stderr, "no ftp service!\n");
 		exit(1);
 	}
 
@@ -112,7 +112,7 @@ hookup (char *domain)
 	
 	/* get host's ip seraddr */
 	if (!(hostp = gethostbyname(domain))){
-		fprintf(stderr, "Ftp: %s\n", domain);
+		fprintf(stderr, "ftp: %s\n", domain);
 		goto BAD;
 	}
 
@@ -122,18 +122,18 @@ hookup (char *domain)
     seraddr.sin_port = ftpport;
 
 #ifdef DEBUG
-	printf("remote ip address: %s\n", inet_ntoa(seraddr.sin_addr));
+	printf("Remote ip address: %s\n", inet_ntoa(seraddr.sin_addr));
 #endif
 
 	/* create a new socket for client */
 	if ((sockfd = socket(seraddr.sin_family, SOCK_STREAM, 0)) < 0){
-		perror("Ftp: socket");
+		perror("ftp: socket");
 		goto BAD;
 	}
 	
 	/* Now connect our socket to the server's socket */
     if (connect(sockfd, (struct sockaddr *)&seraddr, sizeof(seraddr)) < 0){
-		perror("Ftp: connect");
+		perror("ftp: connect");
 		goto BAD;
 	}
 	
@@ -141,11 +141,11 @@ hookup (char *domain)
 	/* 获得客户的信息，ip，port */
 	socklen_t len = sizeof(cliaddr);
 	if ((getsockname(sockfd, (struct sockaddr *)&cliaddr, &len)) < 0){
-		perror("Ftp: getsockname");
+		perror("ftp: getsockname");
 		goto BAD;
 	}
 #ifdef DEBUG
-	printf("local ip: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
+	printf("Local ip: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
 #endif
 
 	/* 连接成功 */
@@ -153,7 +153,7 @@ hookup (char *domain)
 	cout= fdopen(sockfd, "w");
 
 	if (cin == NULL || cout == NULL) {
-		fprintf(stderr, "Ftp: fdopen failed.\n");
+		fprintf(stderr, "ftp: fdopen failed.\n");
 		if (cin)
 			fclose(cin);
 		if (cout)
@@ -245,7 +245,7 @@ atlogin (void)
 		n = command("PASS %s", pass);
 	}
 	if (n != COMPLETE){
-		fprintf(stderr, "Auto login failed.\n");
+		fprintf(stderr, "auto login failed.\n");
 		return;
 	}
 	logined = 1;
@@ -288,7 +288,7 @@ command (const char *fmt, ...)
 	va_list ap;
 
 	if (cout == NULL){
-		perror("No control connection for command");
+		perror("no control connection for command");
 		code = -1;
 		return 0;
 	}
