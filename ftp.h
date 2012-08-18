@@ -33,7 +33,6 @@ extern char ans[];
 
 /* 数据传输格式控制 */
 extern int type;
-extern int curtype;
 extern int passivemode;
 extern int autologin;
 extern int pflag;	//???

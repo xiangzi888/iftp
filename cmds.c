@@ -202,7 +202,7 @@ OPEN (int argc, char *argv[])
 	/*-----------------------------------------------------------------------------
 	 *  Set up defaults for FTP.
 	 *-----------------------------------------------------------------------------*/
-	strcpy(typenm, "ascii"), type = TYPE_A, curtype = TYPE_A;
+	strcpy(typenm, "ascii"), type = TYPE_A;
 
 	if (autologin)
 		atlogin();
@@ -255,7 +255,7 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 			goto ABORT;
 		}
 	}
-	switch (curtype) {
+	switch (type) {
 		case TYPE_I:
 			break;
 		case TYPE_A:	
@@ -448,7 +448,7 @@ settype(const char *thetype)
 	}
 	if (command("TYPE %s", p->t_mode) == COMPLETE) {
 		strcpy(typenm, p->t_name);
-		curtype = type = p->t_type;
+		type = p->t_type;
 	}
 }		/* -----  end of function settype  ----- */
 
