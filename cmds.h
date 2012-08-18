@@ -27,6 +27,7 @@ struct cmd *getcmd(char *name);
 void recvreq(const char *cmd, char *local, char *remote, const char *lmod);
 int initconn(void);
 FILE *dataconn(const char *lmode);
+char *protect(char *name);
 
 void QUIT(void);
 void CLOSE(void);
@@ -39,6 +40,7 @@ void BINARY(void);
 void PASSIVE(void);
 void AUTOLOG(void);
 void TYPE(int argc, char *argv[]);
+void GET(int argc, char *argv[]);
 void LS(int argc, char *argv[]);
 void GET(int argc, char *argv[]);
 

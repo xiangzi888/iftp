@@ -60,6 +60,7 @@ struct cmd cmdtab[] = {
 	{ "quit",	"HQUIT",	0,	NULL,	QUIT},
 	{ "bye",	"HQUIT",	0,	NULL,	QUIT},
 	{ "ls",		"HLS",		1,	LS,		NULL},
+	{ "nlist",	"HNLIST",	1,	LS,		NULL},
 	{ "get",	"HGET",		1,	GET,	NULL},
 	{ "pwd",	"HPWD",		1,	NULL,	PWD},
 	{ "close",	"HCLOSE",	1,	NULL,	CLOSE},
@@ -207,19 +208,6 @@ OPEN (int argc, char *argv[])
 	if (autologin)
 		atlogin();
 }		/* -----  end of function OPEN  ----- */
-
-
-/* 
- * ===  FUNCTION  ======================================================================
- *         Name:  GET
- *  Description:  
- * =====================================================================================
- */
-	void
-GET (int argc, char *argv[])
-{
-	return ;
-}		/* -----  end of function GET  ----- */
 
 
 
@@ -639,5 +627,44 @@ AUTOLOG (void)
 	if (autologin && connected && !logined)
 		atlogin();
 }		/* -----  end of function AUTOLOG  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  GET
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+GET (int argc, char *argv[])
+{
+	if (argc == 2){
+		argc++;
+		argv[2] = protect(argv[1]);
+	}
+	if (argc < 2 || argc > 3){
+		printf("Usage: %s remote-file [local-file]\n", argv[0]);
+		code = -1;
+		return;
+	}
+	recvreq("RETR", argv[2], argv[1], "w");
+}		/* -----  end of function GET  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  protect
+ *  Description:  
+ * =====================================================================================
+ */
+	char *	
+protect (char *name)
+{
+	if (*name != '/') {
+		return name;
+	}
+
+	return 1 + strrchr(name, '/');
+}		/* -----  end of function protect  ----- */
 
 
