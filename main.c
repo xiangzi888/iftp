@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "ftp.h"
 #include "cmds.h"
@@ -58,6 +59,8 @@ main( int argc, char *argv[] )
 
 	OPEN(margc, margv);
 
+	signal(SIGINT, SIG_IGN);
+	signal(SIGPIPE, lostpeer);
 	while (1)
 	{
 		cmdloop();
@@ -80,7 +83,7 @@ cmdloop (void)
 	int l;
 	char line[MAXLINE] = "";
 
-	for (;;) {
+	for (;;) {		
 		if (!getinput(line, sizeof(line))) {
 			QUIT();
 		}
@@ -111,14 +114,26 @@ cmdloop (void)
 			continue;
 		}
 		if (c->c_conn && !connected) {
-			printf("Not connected.\n");
-			continue;
+			/* 试图自动建立连接 */
+			if (automatic && strcmp(hostnm, "")){
+#ifdef DEBUG
+				printf("trying to auto connect\n");
+#endif
+				setpeer(hostnm);
+			}
+			else{
+				printf("Not connected.\n");
+				continue;
+			}
 		}
 		if (c->c_handler_1) 
 			c->c_handler_1(margc, margv);
 		else
 			c->c_handler_0();
 	}
+
+	signal(SIGINT, SIG_IGN);
+	signal(SIGPIPE, lostpeer);
 }		/* -----  end of function cmdloop  ----- */
 
 

@@ -68,7 +68,7 @@ struct cmd cmdtab[] = {
 	{ "binary",	"HBINARY",	1,	NULL,	BINARY},
 	{ "image",	"HBINARY",	1,	NULL,	BINARY},
 	{ "passive","HPASSIVE",	0,	NULL,	PASSIVE},
-	{ "autolog","HAUTOLOG",	0,	NULL,	AUTOLOG},
+	{ "automatic","HAUTOMATIC",	0,	NULL,	AUTOMATIC},
 	{ "open",	"HOPEN",	0,	OPEN,	NULL},
 	{ "user",	"HUSER",	1,	USER,	NULL},
 	{ "type",	"HTYPE",	1,	TYPE,	NULL},
@@ -176,7 +176,6 @@ CLOSE (void)
 	}
 	cout = NULL;
 	connected = 0;
-	logined = 0;
 	data = -1;
 }		/* -----  end of function CLOSE  ----- */
 
@@ -197,16 +196,14 @@ OPEN (int argc, char *argv[])
 		printf("Already connected to %s, use close first.\n", hostnm);
 		return;
 	}
-	if (hookup(argv[1]))
-		connected = 1;
 
-	/*-----------------------------------------------------------------------------
-	 *  Set up defaults for FTP.
-	 *-----------------------------------------------------------------------------*/
-	strcpy(typenm, "ascii"), type = TYPE_A;
-
-	if (autologin)
-		atlogin();
+	if (!setpeer(argv[1])){
+		/*-----------------------------------------------------------------------------
+		 *  Set up defaults for FTP.
+		 *-----------------------------------------------------------------------------*/
+		strcpy(typenm, "ascii"), type = TYPE_A;
+		automatic = 1;
+	}
 }		/* -----  end of function OPEN  ----- */
 
 
@@ -228,10 +225,12 @@ recvreq(const char *cmd, char *local, char *remote, const char *lmode)
 	int c, d;
 
 	if (initconn()) {
-		code = -1;
+		signal(SIGINT, SIG_IGN);
+		signal(SIGPIPE, SIG_IGN);
 		return;
 	}
 	if (command("%s %s", cmd, remote) != PRELIM) {
+		signal(SIGINT, SIG_IGN);
 		return;
 	}
 	din = dataconn("r");
@@ -355,9 +354,8 @@ initconn (void)
 		 * prepare a sockaddr_in.
 		 */
 
-		if (sscanf(pasv,"%ld,%ld,%ld,%ld,%ld,%ld",
-			&a1,&a2,&a3,&a4,&p1,&p2) != 6) {
-			printf("Passive mode address scan failure. Shouldn't happen!\n");
+		if (sscanf(pasv,"%ld,%ld,%ld,%ld,%ld,%ld", &a1,&a2,&a3,&a4,&p1,&p2) != 6) {
+			printf("Passive mode address scan failure.\n");
 			return 1;
 		}
 
@@ -591,7 +589,6 @@ USER (int argc, char *argv[])
 		printf("Login failed.\n");
 		return;
 	}	
-	logined = 1;
 }		/* -----  end of function USER  ----- */
 
 
@@ -618,14 +615,11 @@ PASSIVE (void)
  * =====================================================================================
  */
 	void
-AUTOLOG (void)
+AUTOMATIC(void)
 {
-	autologin = !autologin;
-	printf("Autologin %s.\n", onoff(autologin));
-	code = autologin;
-	
-	if (autologin && connected && !logined)
-		atlogin();
+	automatic = !automatic;
+	printf("automatic login/connect %s.\n", onoff(automatic));
+	code = automatic;
 }		/* -----  end of function AUTOLOG  ----- */
 
 
