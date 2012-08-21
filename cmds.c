@@ -60,6 +60,8 @@ struct cmd cmdtab[] = {
 	{ "quit",	"HQUIT",	0,	NULL,	QUIT},
 	{ "bye",	"HQUIT",	0,	NULL,	QUIT},
 	{ "ls",		"HLS",		1,	LS,		NULL},
+	{ "cd",		"HCD",		1,	CD,		NULL},
+	{ "cdup",	"HCDUP",	1,	NULL,	CDUP},
 	{ "nlist",	"HNLIST",	1,	LS,		NULL},
 	{ "get",	"HGET",		1,	GET,	NULL},
 	{ "put",	"HPUT",		1,	PUT,	NULL},
@@ -148,6 +150,40 @@ LS (int argc, char *argv[])
 	recvreq(c, argv[2], argv[1], "w");
 }		/* -----  end of function LS----- */
 
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  CD
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+CD (int argc, char *argv[])
+{
+	if (argc < 2){
+		argc++;
+		argv[1] = "/";
+	}
+	if (argc > 2){
+		printf("Usage: %s remote-dir\n", argv[0]);	
+		code = -1;
+		return;
+	}
+	command("CWD %s", argv[1]);
+}		/* -----  end of function CD  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  CDUP
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+CDUP (void)
+{
+	command("CDUP");
+}		/* -----  end of function CDUP  ----- */
 
 /* 
  * ===  FUNCTION  ======================================================================

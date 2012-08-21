@@ -32,6 +32,7 @@ char *getname(char *name);
 void QUIT(void);
 void CLOSE(void);
 void PWD(void);
+void CDUP(void);
 void OPEN(int argc, char *argv[]);
 void USER(int argc, char *argv[]);
 void SYSTEM(void);
@@ -42,6 +43,7 @@ void AUTOMATIC(void);
 void TYPE(int argc, char *argv[]);
 void GET(int argc, char *argv[]);
 void LS(int argc, char *argv[]);
+void CD(int argc, char *argv[]);
 void PUT(int argc, char *argv[]);
 
 
