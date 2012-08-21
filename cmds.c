@@ -62,6 +62,7 @@ struct cmd cmdtab[] = {
 	{ "ls",		"HLS",		1,	LS,		NULL},
 	{ "nlist",	"HNLIST",	1,	LS,		NULL},
 	{ "get",	"HGET",		1,	GET,	NULL},
+	{ "put",	"HPUT",		1,	PUT,	NULL},
 	{ "pwd",	"HPWD",		1,	NULL,	PWD},
 	{ "close",	"HCLOSE",	1,	NULL,	CLOSE},
 	{ "ascii",	"HASCII",	1,	NULL,	ASCII},
@@ -319,6 +320,101 @@ ABORT:
 	if (bytes > 0)
 		printf("Received %ld bytes\n", bytes);
 }		/* -----  end of function recvreq  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  sendreq
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+sendreq (const char *cm, char *local, char *remote)
+{
+	struct stat st;
+	int c, d;
+	FILE *fin, *dout = 0;
+	long bytes = 0;
+	char buf[BUFSIZ], *bufp;
+
+	fin = fopen(local, "r");
+	if (fin == NULL) {
+		fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
+		goto ABORT;
+	}
+	if (fstat(fileno(fin), &st) < 0 || !S_ISREG(st.st_mode)){
+		fprintf(stdout, "%s: not a plain file.\n", local);
+		goto ABORT;
+	}
+	if (initconn()){
+		goto ABORT;
+	}
+	if (command("%s %s", cm, remote) != PRELIM) {
+		goto ABORT;
+	}
+	if ((dout = dataconn("w")) == NULL)
+		goto ABORT;
+	signal(SIGPIPE, SIG_IGN);
+
+	switch (type) {
+		case TYPE_I:
+			d = 0;
+			while ((c = read(fileno(fin), buf, sizeof (buf))) > 0) {
+				bytes += c;
+				for (bufp = buf; c > 0; c -= d, bufp += d)
+					if ((d = write(fileno(dout), bufp, c)) <= 0)
+						break;
+			}
+			if (c < 0)
+				fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
+			if (d < 0) {
+				bytes = -1;
+			}
+		break;
+		case TYPE_A:
+			while ((c = getc(fin)) != EOF) {
+				if (c == '\n') {
+					if (ferror(dout))
+						break;
+					putc('\r', dout);
+					bytes++;
+				}
+				putc(c, dout);
+				bytes++;
+			}
+			if (ferror(fin))
+				fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
+			if (ferror(dout)) {
+				bytes = -1;
+			}
+		break;
+	}
+	fclose(fin);
+	fclose(dout);
+	data = -1;
+	getreply();
+	signal(SIGINT, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+	if (bytes > 0)
+		printf("Send %ld bytes\n", bytes);
+	return;
+ABORT:
+	signal(SIGINT, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+	if (fin)
+		fclose(fin);
+	if (dout)
+		fclose(dout);
+	if (data > 0){
+		close(data);
+		data = -1;
+	}
+	getreply();
+	code = -1;
+	if (bytes > 0)
+		printf("Send %ld bytes\n", bytes);
+
+}		/* -----  end of function sendreq  ----- */
 
 
 /* 
@@ -634,7 +730,7 @@ GET (int argc, char *argv[])
 {
 	if (argc == 2){
 		argc++;
-		argv[2] = protect(argv[1]);
+		argv[2] = getname(argv[1]);
 	}
 	if (argc < 2 || argc > 3){
 		printf("Usage: %s remote-file [local-file]\n", argv[0]);
@@ -647,18 +743,41 @@ GET (int argc, char *argv[])
 
 /* 
  * ===  FUNCTION  ======================================================================
- *         Name:  protect
+ *         Name:  PUT
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+PUT (int argc, char *argv[])
+{
+	const char *c;
+
+	if (argc == 2){
+		argc++;
+		argv[2] = getname(argv[1]);
+	}
+	if (argc < 2 || argc > 3){
+		printf("Usage: %s local-file [remote-file]\n", argv[0]);
+		code = -1;
+		return;
+	}
+	c = (argv[0][0] == 'a') ? "APPE" : "STOR";
+	sendreq(c, argv[1], argv[2]);
+}		/* -----  end of function PUT  ----- */
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  getname
  *  Description:  
  * =====================================================================================
  */
 	char *	
-protect (char *name)
+getname (char *name)
 {
 	if (*name != '/') {
 		return name;
 	}
 
-	return 1 + strrchr(name, '/');
-}		/* -----  end of function protect  ----- */
+	return (1 + strrchr(name, '/'));
+}		/* -----  end of function getname  ----- */
 
 
