@@ -56,26 +56,47 @@ struct types{
 	{ NULL, 	NULL, 	0}
 };
 
+const char HQUIT[] = "terminate ftp session and exit";
+const char HLS[] = "list contents of remote directory";
+const char HCD[] = "change remote working directory";
+const char HCDUP[] = "change remote working directory to parent directory";
+const char HNLIST[] = "nlist contents of remote directory";
+const char HGET[] = "receive file";
+const char HPUT[] = "send one file";
+const char HPASSIVE[] = "enter passive transfer mode";
+const char HPWD[] = "print working directory on remote machine";
+const char HCLOSE[] = "terminate ftp session";
+const char HASCII[] = "set ascii transfer type";
+const char HBINARY[] = "set binary transfer type";
+const char HAUTOMATIC[] = "set automatic login/connect when needed";
+const char HOPEN[] = "connect to remote ftp";
+const char HUSER[] = "send new user information";
+const char HTYPE[] = "set file transfer type";
+const char HSYSTEM[] = "show remote system type";
+const char HHELP[] = "print local help information";
+
+
 struct cmd cmdtab[] = {
-	{ "quit",	"HQUIT",	0,	NULL,	QUIT},
-	{ "bye",	"HQUIT",	0,	NULL,	QUIT},
-	{ "ls",		"HLS",		1,	LS,		NULL},
-	{ "cd",		"HCD",		1,	CD,		NULL},
-	{ "cdup",	"HCDUP",	1,	NULL,	CDUP},
-	{ "nlist",	"HNLIST",	1,	LS,		NULL},
-	{ "get",	"HGET",		1,	GET,	NULL},
-	{ "put",	"HPUT",		1,	PUT,	NULL},
-	{ "pwd",	"HPWD",		1,	NULL,	PWD},
-	{ "close",	"HCLOSE",	1,	NULL,	CLOSE},
-	{ "ascii",	"HASCII",	1,	NULL,	ASCII},
-	{ "binary",	"HBINARY",	1,	NULL,	BINARY},
-	{ "image",	"HBINARY",	1,	NULL,	BINARY},
-	{ "passive","HPASSIVE",	0,	NULL,	PASSIVE},
-	{ "automatic","HAUTOMATIC",	0,	NULL,	AUTOMATIC},
-	{ "open",	"HOPEN",	0,	OPEN,	NULL},
-	{ "user",	"HUSER",	1,	USER,	NULL},
-	{ "type",	"HTYPE",	1,	TYPE,	NULL},
-	{ "system",	"HSYSTEM",	1,	NULL,	SYSTEM},
+	{ "quit",	HQUIT,		0,	NULL,	QUIT},
+	{ "bye",	HQUIT,		0,	NULL,	QUIT},
+	{ "ls",		HLS,		1,	LS,		NULL},
+	{ "cd",		HCD,		1,	CD,		NULL},
+	{ "cdup",	HCDUP,		1,	NULL,	CDUP},
+	{ "nlist",	HNLIST,		1,	LS,		NULL},
+	{ "get",	HGET,		1,	GET,	NULL},
+	{ "put",	HPUT,		1,	PUT,	NULL},
+	{ "pwd",	HPWD,		1,	NULL,	PWD},
+	{ "close",	HCLOSE,		1,	NULL,	CLOSE},
+	{ "ascii",	HASCII,		1,	NULL,	ASCII},
+	{ "binary",	HBINARY,	1,	NULL,	BINARY},
+	{ "image",	HBINARY,	1,	NULL,	BINARY},
+	{ "passive",HPASSIVE,	0,	NULL,	PASSIVE},
+{ "automatic",	HAUTOMATIC,	0,	NULL,	AUTOMATIC},
+	{ "open",	HOPEN,		0,	OPEN,	NULL},
+	{ "user",	HUSER,		1,	USER,	NULL},
+	{ "type",	HTYPE,		1,	TYPE,	NULL},
+	{ "system",	HSYSTEM,	1,	NULL,	SYSTEM},
+	{ "help",	HHELP,		0,	HELP,	NULL},
 };
 
 /* 
@@ -816,5 +837,43 @@ getname (char *name)
 
 	return (1 + strrchr(name, '/'));
 }		/* -----  end of function getname  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  HELP
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+HELP ( int argc, char *argv[] )
+{
+	struct cmd *c = cmdtab;
+	int n = 0;
+
+	if (argc ==1){
+PALL:
+		printf("Commands may be abbreviated.  Commands are:\n");
+		printf("\n");
+		while (c->c_name){
+			printf("%-15s", c->c_name);
+			c++;
+			if ((++n % 5) == 0)
+				printf("\n");
+		}
+	}
+	else{
+		c = getcmd(argv[1]);
+		if (c == (struct cmd *)-1 || c == NULL){
+			goto PALL;
+		}
+		printf("%s\t\t%s\n", c->c_name, c->c_help);
+	}
+}		/* -----  end of function HELP  ----- */
+
+
+
+
+
 
 

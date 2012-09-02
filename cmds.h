@@ -45,6 +45,7 @@ void GET(int argc, char *argv[]);
 void LS(int argc, char *argv[]);
 void CD(int argc, char *argv[]);
 void PUT(int argc, char *argv[]);
+void HELP(int argc, char *argv[]);
 
 
 /*-----------------------------------------------------------------------------
