@@ -59,12 +59,12 @@ int connected = 0;
 int code;
 
 /* 数据传输格式控制 */
-int type;
-int passivemode;
-int automatic = 1;
+int type = TYPE_A;
+int passivemode = 0;
+int automatic = 0;
 
-char typenm[MAXNAME];		/* 当前的传输类型名 */
-char hostnm[MAXHOST];		/* 服务器主机名 */
+char typenm[MAXNAME] = "ascii";		/* 当前的传输类型名 */
+char hostnm[MAXHOST];				/* 服务器主机名 */
 char pasv[MAXIPPORT]; 				/* 被动模式下接受的端口号 */
 
 /* 请求，响应标志 */
@@ -202,8 +202,11 @@ getreply (void)
 				code = 421;
 				printf("421 Service not available, remote server has closed connection\n");
 				fflush(stdout);
-				if (automatic && strcmp(hostnm, ""))
+				if (automatic && strcmp(hostnm, "")){
 					setpeer(hostnm);
+					printf("trying to reconnect\n");
+					fflush(stdout);
+				}
 				return 4;
 			}
 			if (c != '\r')

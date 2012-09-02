@@ -39,6 +39,7 @@
  *  函数声明
  *-----------------------------------------------------------------------------*/
 static void cmdloop(void);	
+static void usage(void);	
 static char *getinput(char *buf, int len);
 static void makearg(char *str);
 
@@ -52,12 +53,34 @@ static void makearg(char *str);
 	int
 main( int argc, char *argv[] )
 {
-	ftpport = getftpport();
-	margc = 2;
-	margv[0] = "open";
-	margv[1] = argv[1];
+	char *cp;
 
-	OPEN(margc, margv);
+	argc--, argv++;
+	while(argc > 0 && **argv == '-'){
+		for(cp = *argv + 1; *cp; cp++){
+			switch (*cp){
+			case 'a':
+				automatic = 1;
+				break;
+			case 'p':
+				passivemode = 1;
+				break;
+			case 'h':
+				usage();
+				exit(0);
+			default:
+				printf("ftp: %c: unknown option\n", *cp);
+				usage();
+				exit(1);
+			}
+		}
+		argc--, argv++;
+	}
+	ftpport = getftpport();
+
+	/* 有主机名，试图建立连接 */
+	if (argc > 0)
+		setpeer(*argv);
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGPIPE, lostpeer);
@@ -102,6 +125,11 @@ cmdloop (void)
 				;
 			break;
 		} 
+		/* 如果是大写命令，直接发送到服务器处理，只适合部分控制命令，慎用 */
+		if (isupper(line[0])){
+			command(line);
+			continue;
+		}
 
 		makearg(line);
 		c = getcmd(margv[0]);
@@ -116,9 +144,6 @@ cmdloop (void)
 		if (c->c_conn && !connected) {
 			/* 试图自动建立连接 */
 			if (automatic && strcmp(hostnm, "")){
-#ifdef DEBUG
-				printf("trying to auto connect\n");
-#endif
 				setpeer(hostnm);
 			}
 			else{
@@ -184,3 +209,19 @@ makearg(char *str)
 #endif
 }		/* -----  end of function makearg  ----- */
 
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  usage
+ *  Description:  
+ * =====================================================================================
+ */
+	void
+usage ()
+{
+	printf("\n\tUsage: iftp [-ahp] [hostname]\n");
+	printf("\t   -p: enable passive mode\n");
+	printf("\t   -a: enable automatic login/connect\n");
+	printf("\t   -h: show help information\n");
+	printf("\n");
+}		/* -----  end of function usage  ----- */

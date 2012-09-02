@@ -239,7 +239,8 @@ OPEN (int argc, char *argv[])
 		 *  Set up defaults for FTP.
 		 *-----------------------------------------------------------------------------*/
 		strcpy(typenm, "ascii"), type = TYPE_A;
-		automatic = 1;
+		automatic = 0;
+		passivemode = 0;
 	}
 }		/* -----  end of function OPEN  ----- */
 
